@@ -45,6 +45,24 @@ services:
       retries: 10
       start_period: 30s
 
+  feedback-ui:
+    build:
+      context: ../tsg-9.27-DamonCody-frontend-feedback-ui/frontend-feedback-ui
+      dockerfile: Dockerfile
+    container_name: feedback-ui
+    restart: always
+    depends_on:
+      feedback-api:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: feedback-kafka-ui
