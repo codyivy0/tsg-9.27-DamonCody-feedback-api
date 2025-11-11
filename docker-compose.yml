@@ -106,7 +106,7 @@ services:
 
   feedback-analytics-consumer:
     build:
-      context: ../tsg-9.27-DamonCody-feedback-analytics-consumer/feedback-analytics-consumer
+      context: ../tsg-9.27-DamonCody-feedback-analytics-consumer-main/feedback-analytics-consumer
       dockerfile: Dockerfile
     container_name: feedback-analytics-consumer
     restart: always
