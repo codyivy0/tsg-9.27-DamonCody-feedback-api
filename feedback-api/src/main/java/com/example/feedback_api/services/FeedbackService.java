@@ -2,6 +2,7 @@ package com.example.feedback_api.services;
 
 import com.example.feedback_api.dtos.FeedbackRequest;
 import com.example.feedback_api.dtos.FeedbackResponse;
+import com.example.feedback_api.messaging.FeedbackEventPublisher;
 import com.example.feedback_api.model.FeedbackEntity;
 import com.example.feedback_api.repositories.FeedbackRepository;
 import org.springframework.stereotype.Service;
@@ -18,9 +19,11 @@ import java.time.Instant;
 public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
+    private final FeedbackEventPublisher eventPublisher;
 
-    public FeedbackService(FeedbackRepository feedbackRepository) {
+    public FeedbackService(FeedbackRepository feedbackRepository, FeedbackEventPublisher eventPublisher) {
         this.feedbackRepository = feedbackRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -44,6 +47,9 @@ public class FeedbackService {
         
         // Save to database
         FeedbackEntity savedEntity = feedbackRepository.save(entity);
+        
+        // Publish event to Kafka after successful save
+        eventPublisher.publishFeedbackSubmitted(savedEntity);
         
         // Map Entity → Response DTO
         return mapEntityToResponse(savedEntity);
