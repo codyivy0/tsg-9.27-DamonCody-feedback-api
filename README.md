@@ -10,6 +10,7 @@ docker-compose up -d
 ### Service URLs
 - **Frontend UI**: http://localhost:3000
 - **Spring Boot API**: http://localhost:8080
+- **Swagger UI (API Docs)**: http://localhost:8080/swagger-ui.html
 - **Analytics Consumer**: http://localhost:8081
 - **Kafka UI Dashboard**: http://localhost:8090
 - **PostgreSQL**: localhost:5433
