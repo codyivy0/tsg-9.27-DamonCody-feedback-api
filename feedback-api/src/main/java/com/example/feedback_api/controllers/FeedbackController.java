@@ -45,7 +45,7 @@ public class FeedbackController {
                                      schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/feedback")
-    public ResponseEntity<?> createFeedback(
+    public ResponseEntity<Object> createFeedback(
             @RequestBody @Valid FeedbackRequest request) {
         
         try {
