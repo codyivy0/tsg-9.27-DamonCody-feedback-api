@@ -17,6 +17,14 @@ import java.util.UUID;
 public interface FeedbackRepository extends JpaRepository<FeedbackEntity, UUID> {
     
     /**
+     * Find all feedback entries ordered by submission time (newest first)
+     * Used for GET /feedback endpoint without filtering
+     * 
+     * @return list of all feedback entries ordered by submittedAt descending
+     */
+    List<FeedbackEntity> findAllByOrderBySubmittedAtDesc();
+    
+    /**
      * Find all feedback entries for a specific member
      * Maps to GET /feedback?memberId=<id> endpoint
      * 

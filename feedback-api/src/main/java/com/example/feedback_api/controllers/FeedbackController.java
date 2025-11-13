@@ -62,6 +62,22 @@ public class FeedbackController {
         }
     }
 
+    @Operation(summary = "Get feedback entries", 
+               description = "Retrieve all feedback entries, optionally filtered by member ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Feedback entries retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                                     schema = @Schema(implementation = FeedbackResponse.class)))
+    })
+    @GetMapping("/feedback")
+    public ResponseEntity<List<FeedbackResponse>> getFeedback(
+            @RequestParam(required = false) String memberId) {
+        
+        List<FeedbackResponse> feedback = feedbackService.getFeedback(memberId);
+        return ResponseEntity.ok(feedback);
+    }
+
     @Operation(summary = "Health check endpoint", 
                description = "Simple health check to verify the API is running")
     @ApiResponse(responseCode = "200", description = "API is healthy")

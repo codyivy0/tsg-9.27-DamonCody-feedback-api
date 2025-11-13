@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 /**
  * Service layer for feedback operations
@@ -53,6 +54,31 @@ public class FeedbackService {
         
         // Map Entity → Response DTO
         return mapEntityToResponse(savedEntity);
+    }
+
+    /**
+     * Retrieve feedback entries with optional filtering by member ID
+     * Returns all feedback if memberId is null, or filtered feedback if memberId is provided
+     *
+     * @param memberId optional member ID to filter by
+     * @return list of feedback response DTOs (may be empty)
+     */
+    @Transactional(readOnly = true)
+    public List<FeedbackResponse> getFeedback(String memberId) {
+        List<FeedbackEntity> entities;
+        
+        if (memberId == null || memberId.trim().isEmpty()) {
+            // Return all feedback, ordered by submission time (newest first)
+            entities = feedbackRepository.findAllByOrderBySubmittedAtDesc();
+        } else {
+            // Return feedback for specific member, ordered by submission time (newest first)
+            entities = feedbackRepository.findByMemberIdOrderBySubmittedAtDesc(memberId.trim());
+        }
+        
+        // Map entities to response DTOs
+        return entities.stream()
+                .map(this::mapEntityToResponse)
+                .toList();
     }
 
     /**
