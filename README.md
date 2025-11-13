@@ -122,6 +122,154 @@ For ongoing development testing:
 }
 ```
 
+## 🧪 Unit Testing
+
+### Running Tests
+
+#### **Run All Tests**
+```bash
+cd feedback-api
+./mvnw test
+```
+
+#### **Run Specific Test Class**
+```bash
+# Test only DTO validation
+./mvnw test -Dtest=FeedbackRequestTest
+
+# Test only service logic
+./mvnw test -Dtest=FeedbackServiceTest
+
+# Test only controller endpoints
+./mvnw test -Dtest=FeedbackControllerTest
+```
+
+#### **Run Tests with Verbose Output**
+```bash
+./mvnw test -X
+```
+
+### Test Coverage Overview
+
+**✅ Current Test Suite: 20 Unit Tests + 1 Integration Test (disabled)**
+
+#### **Test Categories:**
+
+##### **1. DTO Validation Tests** (`FeedbackRequestTest.java`) - 7 tests
+Tests all Jakarta validation annotations on the request DTO:
+- ✅ Valid feedback request validation
+- ✅ Required field validation (`@NotBlank`, `@NotNull`)
+- ✅ Field length constraints (`@Size`)
+- ✅ Rating range validation (`@Min`, `@Max`)
+- ✅ Optional comment field handling
+- ✅ Edge cases (null, empty, whitespace values)
+
+##### **2. Service Layer Tests** (`FeedbackServiceTest.java`) - 7 tests
+Tests business logic and service operations with mocked dependencies:
+- ✅ Feedback creation and database persistence
+- ✅ Duplicate feedback prevention (business rule)
+- ✅ Business validation (beyond DTO constraints)
+- ✅ GET feedback with optional member ID filtering
+- ✅ Kafka event publishing integration
+- ✅ Error handling and exception scenarios
+- ✅ Data mapping (DTO ↔ Entity transformations)
+
+##### **3. Controller Layer Tests** (`FeedbackControllerTest.java`) - 6 tests
+Tests HTTP endpoints using MockMvc (no real server):
+- ✅ `POST /api/v1/feedback` → 201 Created response
+- ✅ `POST /api/v1/feedback` → 400 validation error handling
+- ✅ `GET /api/v1/feedback?memberId=<id>` → 200 filtered results
+- ✅ `GET /api/v1/feedback` → 200 all feedback
+- ✅ `GET /api/v1/health` → 200 health check
+- ✅ JSON serialization/deserialization
+
+### Test Results Summary
+
+```bash
+Tests run: 21, Failures: 0, Errors: 0, Skipped: 1
+```
+
+**Breakdown:**
+- **20 Unit Tests**: All passing ✅
+- **1 Integration Test**: Intentionally disabled (requires Docker containers)
+
+### Test Architecture
+
+#### **Testing Strategy:**
+- **Unit Tests**: Fast, isolated, no external dependencies
+- **Mocking**: Uses Mockito for repository and Kafka dependencies
+- **Test Slices**: `@WebMvcTest` for controllers, isolated service tests
+- **Validation Testing**: Bean Validation API with real validator
+
+#### **Key Testing Patterns:**
+
+##### **AAA Pattern** (Arrange, Act, Assert)
+```java
+@Test
+void createFeedback_ValidRequest_ShouldReturn201() {
+    // Arrange - Set up test data and mocks
+    FeedbackRequest request = new FeedbackRequest();
+    request.setMemberId("test-123");
+    // ... more setup
+    
+    // Act - Execute the operation
+    FeedbackResponse response = feedbackService.validateAndSave(request);
+    
+    // Assert - Verify the results
+    assertEquals("test-123", response.getMemberId());
+    verify(mockRepository).save(any());
+}
+```
+
+##### **MockMvc for HTTP Testing**
+```java
+mockMvc.perform(post("/api/v1/feedback")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request)))
+    .andExpect(status().isCreated())
+    .andExpect(jsonPath("$.memberId").value("test-123"));
+```
+
+##### **Mockito for Isolation**
+```java
+@Mock
+private FeedbackRepository feedbackRepository;
+
+@Mock 
+private FeedbackEventPublisher eventPublisher;
+
+when(feedbackRepository.save(any())).thenReturn(mockEntity);
+```
+
+### Test Data Management
+
+#### **Test Data Setup**
+```java
+@BeforeEach
+void setUp() {
+    validRequest = new FeedbackRequest();
+    validRequest.setMemberId("member-123");
+    validRequest.setProviderName("Dr. Smith");
+    validRequest.setRating(4);
+    validRequest.setComment("Great service!");
+}
+```
+
+#### **Edge Case Testing**
+- Null values, empty strings, whitespace-only inputs
+- Boundary values (rating 1, 5, 0, 6)
+- Maximum field lengths (36 chars for memberId, 200 for comment)
+- Business rule violations (duplicate feedback)
+
+### Testing Best Practices Used
+
+1. **Fast Execution** - All unit tests complete in ~3 seconds
+2. **Isolated Tests** - No shared state between tests
+3. **Realistic Data** - Uses meaningful test values
+4. **Clear Naming** - Test method names describe scenario and expectation
+5. **Comprehensive Coverage** - Tests happy path, edge cases, and errors
+6. **Proper Mocking** - Dependencies are mocked, not real implementations
+
 ### 📊 Monitoring
 
 #### **Real-time Kafka Monitoring**
