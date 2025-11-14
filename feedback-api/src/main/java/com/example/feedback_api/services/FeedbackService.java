@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service layer for feedback operations
@@ -38,27 +39,28 @@ public class FeedbackService {
     public FeedbackResponse validateAndSave(FeedbackRequest request) {
         // Additional service-layer validation
         validateBusinessRules(request);
-        
+
         // Map DTO → Entity
         FeedbackEntity entity = mapRequestToEntity(request);
-        
+
         // Set timestamp manually to ensure it's not null
         // @CreationTimestamp should handle this, but we ensure it's set
         entity.setSubmittedAt(Instant.now());
-        
+
         // Save to database
         FeedbackEntity savedEntity = feedbackRepository.save(entity);
-        
+
         // Publish event to Kafka after successful save
         eventPublisher.publishFeedbackSubmitted(savedEntity);
-        
+
         // Map Entity → Response DTO
         return mapEntityToResponse(savedEntity);
     }
 
     /**
      * Retrieve feedback entries with optional filtering by member ID
-     * Returns all feedback if memberId is null, or filtered feedback if memberId is provided
+     * Returns all feedback if memberId is null, or filtered feedback if memberId is
+     * provided
      *
      * @param memberId optional member ID to filter by
      * @return list of feedback response DTOs (may be empty)
@@ -66,15 +68,16 @@ public class FeedbackService {
     @Transactional(readOnly = true)
     public List<FeedbackResponse> getFeedback(String memberId) {
         List<FeedbackEntity> entities;
-        
+
         if (memberId == null || memberId.trim().isEmpty()) {
             // Return all feedback, ordered by submission time (newest first)
             entities = feedbackRepository.findAllByOrderBySubmittedAtDesc();
         } else {
-            // Return feedback for specific member, ordered by submission time (newest first)
+            // Return feedback for specific member, ordered by submission time (newest
+            // first)
             entities = feedbackRepository.findByMemberIdOrderBySubmittedAtDesc(memberId.trim());
         }
-        
+
         // Map entities to response DTOs
         return entities.stream()
                 .map(this::mapEntityToResponse)
@@ -93,35 +96,33 @@ public class FeedbackService {
         if (request.getMemberId() == null || request.getMemberId().trim().isEmpty()) {
             throw new ValidationException("Member ID is required");
         }
-        
+
         if (request.getProviderName() == null || request.getProviderName().trim().isEmpty()) {
             throw new ValidationException("Provider name is required");
         }
-        
+
         if (request.getRating() == null) {
             throw new ValidationException("Rating is required");
         }
-        
+
         // Validate rating range (1-5)
         if (request.getRating() < 1 || request.getRating() > 5) {
             throw new ValidationException("Rating must be between 1 and 5");
         }
-        
+
         // Validate comment length if provided
         if (request.getComment() != null && request.getComment().length() > 200) {
             throw new ValidationException("Comment must be 200 characters or less");
         }
-        
+
         // Business rule: Check for duplicate feedback
         boolean duplicateExists = feedbackRepository.existsByMemberIdAndProviderName(
-                request.getMemberId().trim(), 
-                request.getProviderName().trim()
-        );
-        
+                request.getMemberId().trim(),
+                request.getProviderName().trim());
+
         if (duplicateExists) {
             throw new ValidationException(
-                "You have already submitted feedback for " + request.getProviderName()
-            );
+                    "You have already submitted feedback for " + request.getProviderName());
         }
     }
 
@@ -148,12 +149,23 @@ public class FeedbackService {
      */
     private FeedbackResponse mapEntityToResponse(FeedbackEntity entity) {
         return new FeedbackResponse(
-            entity.getId(),
-            entity.getMemberId(),
-            entity.getProviderName(),
-            entity.getRating(),
-            entity.getComment(),
-            entity.getSubmittedAt()
-        );
+                entity.getId(),
+                entity.getMemberId(),
+                entity.getProviderName(),
+                entity.getRating(),
+                entity.getComment(),
+                entity.getSubmittedAt());
+    }
+
+    /**
+     * Get feedback by ID
+     * 
+     * @param id feedback ID
+     * @return feedback response DTO
+     */
+    public FeedbackResponse getFeedbackById(String id) {
+        FeedbackEntity entity = feedbackRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new RuntimeException("Feedback not found with id:" + id));
+        return mapEntityToResponse(entity);
     }
 }

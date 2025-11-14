@@ -32,57 +32,55 @@ public class FeedbackController {
         this.feedbackService = feedbackService;
     }
 
-    @Operation(summary = "Submit new provider feedback", 
-               description = "Create a new feedback entry for a healthcare provider")
+    @Operation(summary = "Submit new provider feedback", description = "Create a new feedback entry for a healthcare provider")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "201", 
-                    description = "Feedback created successfully",
-                    content = @Content(mediaType = "application/json",
-                                     schema = @Schema(implementation = FeedbackResponse.class))),
-        @ApiResponse(responseCode = "400", 
-                    description = "Invalid input data or business rule violation",
-                    content = @Content(mediaType = "application/json",
-                                     schema = @Schema(implementation = ErrorResponse.class)))
+            @ApiResponse(responseCode = "201", description = "Feedback created successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = FeedbackResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data or business rule violation", content = @Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class)))
     })
     @PostMapping("/feedback")
     public ResponseEntity<Object> createFeedback(
             @RequestBody @Valid FeedbackRequest request) {
-        
+
         try {
             // Call service to validate and save feedback
             FeedbackResponse response = feedbackService.validateAndSave(request);
             return ResponseEntity.status(201).body(response);
-            
+
         } catch (ValidationException e) {
             // Business validation failed - return 400 with error details
             ErrorResponse errorResponse = new ErrorResponse(
-                List.of(new ErrorResponse.FieldError("business", e.getMessage()))
-            );
+                    List.of(new ErrorResponse.FieldError("business", e.getMessage())));
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 
-    @Operation(summary = "Get feedback entries", 
-               description = "Retrieve all feedback entries, optionally filtered by member ID")
+    @Operation(summary = "Get feedback entries", description = "Retrieve all feedback entries, optionally filtered by member ID")
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                    description = "Feedback entries retrieved successfully",
-                    content = @Content(mediaType = "application/json",
-                                     schema = @Schema(implementation = FeedbackResponse.class)))
+            @ApiResponse(responseCode = "200", description = "Feedback entries retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = FeedbackResponse.class)))
     })
     @GetMapping("/feedback")
     public ResponseEntity<List<FeedbackResponse>> getFeedback(
             @RequestParam(required = false) String memberId) {
-        
+
         List<FeedbackResponse> feedback = feedbackService.getFeedback(memberId);
         return ResponseEntity.ok(feedback);
     }
 
-    @Operation(summary = "Health check endpoint", 
-               description = "Simple health check to verify the API is running")
+    @Operation(summary = "Health check endpoint", description = "Simple health check to verify the API is running")
     @ApiResponse(responseCode = "200", description = "API is healthy")
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("Feedback API is healthy!");
+    }
+
+    @Operation(summary = "Get individual feedback by ID", description = "Retrieve a singular feedback entry by it's UUID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Feedback retrieved successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = FeedbackResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Feedback not found")
+    })
+    @GetMapping("/feedback/{id}")
+    public ResponseEntity<FeedbackResponse> getFeedbackById(@PathVariable String id) {
+        FeedbackResponse feedback = feedbackService.getFeedbackById(id);
+        return ResponseEntity.ok(feedback);
     }
 }
