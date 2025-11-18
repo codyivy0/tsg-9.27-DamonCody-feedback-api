@@ -165,7 +165,7 @@ public class FeedbackService {
      */
     public FeedbackResponse getFeedbackById(String id) {
         FeedbackEntity entity = feedbackRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new RuntimeException("Feedback not found with id:" + id));
+                .orElseThrow(() -> new FeedbackNotFoundException("Feedback not found with id:" + id));
         return mapEntityToResponse(entity);
     }
 }
