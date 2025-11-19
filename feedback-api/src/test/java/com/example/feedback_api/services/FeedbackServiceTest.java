@@ -75,7 +75,7 @@ class FeedbackServiceTest {
         assertEquals("Dr. Smith", response.getProviderName());
         assertEquals(4, response.getRating());
         assertEquals("Great service!", response.getComment());
-        
+
         // Verify interactions
         verify(feedbackRepository).existsByMemberIdAndProviderName("member-123", "Dr. Smith");
         verify(feedbackRepository).save(any(FeedbackEntity.class));
@@ -93,10 +93,10 @@ class FeedbackServiceTest {
         });
 
         assertEquals("You have already submitted feedback for Dr. Smith", exception.getMessage());
-        
+
         // Verify repository was called to check for duplicates
         verify(feedbackRepository).existsByMemberIdAndProviderName("member-123", "Dr. Smith");
-        
+
         // Verify save and publish were NOT called
         verify(feedbackRepository, never()).save(any());
         verify(eventPublisher, never()).publishFeedbackSubmitted(any());
@@ -140,7 +140,7 @@ class FeedbackServiceTest {
         // Assert
         assertEquals(1, responses.size());
         assertEquals("member-123", responses.get(0).getMemberId());
-        
+
         // Verify correct repository method was called
         verify(feedbackRepository).findByMemberIdOrderBySubmittedAtDesc("member-123");
         verify(feedbackRepository, never()).findAllByOrderBySubmittedAtDesc();
@@ -157,7 +157,7 @@ class FeedbackServiceTest {
 
         // Assert
         assertEquals(1, responses.size());
-        
+
         // Verify correct repository method was called
         verify(feedbackRepository).findAllByOrderBySubmittedAtDesc();
         verify(feedbackRepository, never()).findByMemberIdOrderBySubmittedAtDesc(anyString());
@@ -174,7 +174,7 @@ class FeedbackServiceTest {
 
         // Assert
         assertEquals(0, responses.size());
-        
+
         // Verify correct repository method was called (empty string treated as null)
         verify(feedbackRepository).findAllByOrderBySubmittedAtDesc();
     }

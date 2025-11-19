@@ -22,20 +22,21 @@ public class KafkaProducerConfig {
     @Bean
     public ProducerFactory<String, Object> producerFactory() {
         Map<String, Object> config = new HashMap<>();
-        
+
         config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        
-        // Configure JSON serializer to not add type headers (matching your consumer config)
+
+        // Configure JSON serializer to not add type headers (matching your consumer
+        // config)
         config.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
-        
+
         // Additional producer optimizations
         config.put(ProducerConfig.ACKS_CONFIG, "1");
         config.put(ProducerConfig.RETRIES_CONFIG, 3);
         config.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 1000);
         config.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000);
-        
+
         return new DefaultKafkaProducerFactory<>(config);
     }
 
