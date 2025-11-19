@@ -1,5 +1,46 @@
 # tsg-9.27-DamonCody-feedback-api
 
+## 📦 Project Setup
+
+This project consists of **three microservices** that work together. Follow these steps to set up the complete system:
+
+### **Step 1: Create Project Directory**
+```bash
+mkdir feedback-system
+cd feedback-system
+```
+
+### **Step 2: Clone All Three Repositories**
+```bash
+# 1. Main API (this repository)
+git clone https://github.com/codyivy0/tsg-9.27-DamonCody-feedback-api.git
+
+# 2. Frontend UI
+git clone https://github.com/codyivy0/tsg-9.27-DamonCody-frontend-feedback-ui.git
+
+# 3. Analytics Consumer
+git clone https://github.com/codyivy0/tsg-9.27-DamonCody-feedback-analytics-consumer.git
+```
+
+### **Step 3: Verify Directory Structure**
+Your directory should look like this:
+```
+feedback-system/
+├── tsg-9.27-DamonCody-feedback-api/           ← Main API & Docker Compose
+├── tsg-9.27-DamonCody-frontend-feedback-ui/   ← React Frontend
+└── tsg-9.27-DamonCody-feedback-analytics-consumer/ ← Kafka Consumer
+```
+
+### **Step 4: Start the System**
+```bash
+cd tsg-9.27-DamonCody-feedback-api
+docker-compose up -d
+```
+
+*🎯 **Note**: The docker-compose.yml file expects the frontend and analytics repositories to be in sibling directories, which is why this setup is required.*
+
+---
+
 ## Development Setup
 
 ### Starting Services

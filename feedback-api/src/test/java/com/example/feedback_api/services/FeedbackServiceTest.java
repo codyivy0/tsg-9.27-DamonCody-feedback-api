@@ -15,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -177,5 +178,58 @@ class FeedbackServiceTest {
 
         // Verify correct repository method was called (empty string treated as null)
         verify(feedbackRepository).findAllByOrderBySubmittedAtDesc();
+    }
+
+    @Test
+    void getFeedbackById_ValidId_ShouldReturnFeedbackResponse() {
+        // Arrange
+        UUID feedbackId = UUID.randomUUID();
+        mockEntity.setId(feedbackId);
+        when(feedbackRepository.findById(feedbackId)).thenReturn(Optional.of(mockEntity));
+
+        // Act
+        FeedbackResponse response = feedbackService.getFeedbackById(feedbackId.toString());
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(feedbackId, response.getId());
+        assertEquals("member-123", response.getMemberId());
+        assertEquals("Dr. Smith", response.getProviderName());
+        assertEquals(4, response.getRating());
+        assertEquals("Great service!", response.getComment());
+
+        // Verify interaction
+        verify(feedbackRepository).findById(feedbackId);
+    }
+
+    @Test
+    void getFeedbackById_NonExistentId_ShouldThrowFeedbackNotFoundException() {
+        // Arrange
+        UUID feedbackId = UUID.randomUUID();
+        when(feedbackRepository.findById(feedbackId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        FeedbackNotFoundException exception = assertThrows(FeedbackNotFoundException.class, () -> {
+            feedbackService.getFeedbackById(feedbackId.toString());
+        });
+
+        assertEquals("Feedback not found with id:" + feedbackId, exception.getMessage());
+
+        // Verify interaction
+        verify(feedbackRepository).findById(feedbackId);
+    }
+
+    @Test
+    void getFeedbackById_InvalidIdFormat_ShouldThrowIllegalArgumentException() {
+        // Arrange
+        String invalidId = "not-a-valid-uuid";
+
+        // Act & Assert - UUID.fromString will throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> {
+            feedbackService.getFeedbackById(invalidId);
+        });
+
+        // Verify repository was never called due to invalid UUID format
+        verify(feedbackRepository, never()).findById(any());
     }
 }
