@@ -27,7 +27,7 @@ public class FeedbackEventPublisher {
             logger.warn("Cannot publish feedback event: feedback or ID is null");
             return;
         }
-        
+
         try {
             // Create message payload matching consumer's expected format
             Map<String, Object> message = new HashMap<>();

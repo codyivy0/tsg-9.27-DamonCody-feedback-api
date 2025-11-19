@@ -12,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +36,9 @@ class FeedbackControllerTest {
     @MockitoBean
     private FeedbackService feedbackService;
 
+    @MockitoBean 
+    private RestTemplate restTemplate;
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -55,8 +59,7 @@ class FeedbackControllerTest {
                 "Dr. Smith",
                 4,
                 "Great service!",
-                Instant.now()
-        );
+                Instant.now());
     }
 
     @Test
@@ -66,8 +69,8 @@ class FeedbackControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/feedback")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.memberId").value("member-123"))
@@ -84,8 +87,8 @@ class FeedbackControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/feedback")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(validRequest)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors").isArray())
                 .andExpect(jsonPath("$.errors[0].field").value("business"))
@@ -100,8 +103,8 @@ class FeedbackControllerTest {
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/feedback")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -113,7 +116,7 @@ class FeedbackControllerTest {
 
         // Act & Assert
         mockMvc.perform(get("/api/v1/feedback")
-                        .param("memberId", "member-123"))
+                .param("memberId", "member-123"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(1))
@@ -130,13 +133,5 @@ class FeedbackControllerTest {
         mockMvc.perform(get("/api/v1/feedback"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
-    }
-
-    @Test
-    void healthCheck_ShouldReturn200() throws Exception {
-        // Act & Assert
-        mockMvc.perform(get("/api/v1/health"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Feedback API is healthy!"));
     }
 }

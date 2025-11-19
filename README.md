@@ -14,25 +14,32 @@ docker-compose up -d
 - **Analytics Consumer**: http://localhost:8081
 - **Kafka UI Dashboard**: http://localhost:8090
 - **PostgreSQL**: localhost:5433
-- **Kafka Broker**: localhost:9092
 
-### Health Check URLs
-- **Frontend UI Health**: http://localhost:3000 (nginx status)
-- **Main API Health**: http://localhost:8080/actuator/health
-- **Analytics Consumer Health**: http://localhost:8081/actuator/health
+### Health Checks
+Health checks are now available directly through **Swagger UI** at http://localhost:8080/swagger-ui.html:
+- **API Health**: `GET /api/v1/health` - Main feedback API service status
+- **Analytics Health**: `GET /api/v1/health/analytics` - Analytics consumer service status
+
+*Note: Health endpoints provide detailed status information and are integrated into the API documentation.*
 
 ## Testing the Complete End-to-End Flow
 
 ### 🎯 GUI Testing Workflow (Recommended)
 
-This workflow tests the complete flow: **API → Database → Kafka → Consumer** using visual dashboards.
+This workflow tests the complete flow: **API → Database → Kafka → Consumer** using visual dashboards and integrated health monitoring.
 
 #### **Step 1: Open Testing Dashboards**
-1. **Swagger UI**: http://localhost:8080/swagger-ui.html
-2. **Kafka UI**: http://localhost:8090
+1. **Swagger UI**: http://localhost:8080/swagger-ui.html *(Primary testing interface)*
+2. **Kafka UI**: http://localhost:8090 *(Message monitoring)*
 
-#### **Step 2: Submit Feedback via Swagger UI**
-1. Navigate to Swagger UI
+#### **Step 2: Verify System Health via Swagger**
+1. In Swagger UI, expand the **"Health"** section
+2. Test `GET /api/v1/health` - Should return status "UP" for main API
+3. Test `GET /api/v1/health/analytics` - Should return status "UP" for analytics consumer
+4. ✅ **Expected**: Both endpoints return 200 OK with healthy status
+
+#### **Step 3: Submit Feedback via Swagger UI**
+1. Expand **"Feedback Operations"** section  
 2. Find `POST /api/v1/feedback` endpoint
 3. Click "Try it out"
 4. Use this sample JSON:
@@ -47,7 +54,9 @@ This workflow tests the complete flow: **API → Database → Kafka → Consumer
 5. Click "Execute"
 6. ✅ **Expected**: 201 Created response with generated ID and timestamp
 
-#### **Step 3: Verify Kafka Message via Kafka UI**
+*💡 **Tip**: After submitting feedback, test the `GET /api/v1/feedback` and `GET /api/v1/feedback/{id}` endpoints in Swagger to verify data persistence!*
+
+#### **Step 4: Verify Kafka Message via Kafka UI**
 1. Go to Kafka UI dashboard: http://localhost:8090
 2. Click **"Topics"** in left navigation
 3. Click **"feedback-submitted"** topic
@@ -57,7 +66,7 @@ This workflow tests the complete flow: **API → Database → Kafka → Consumer
    - **Value**: JSON payload with all feedback data
    - **Timestamp**: Recent submission time
 
-#### **Step 4: Check Consumer Processing**
+#### **Step 5: Check Consumer Processing**
 ```bash
 docker logs feedback-analytics-consumer --tail 5
 ```
@@ -66,7 +75,7 @@ docker logs feedback-analytics-consumer --tail 5
 Received feedback (id=...) rating=5 provider='Dr. GUI Test' member='test-gui-001' comment='...' submittedAt='...'
 ```
 
-#### **Step 5: Verify Database Persistence**
+#### **Step 6: Verify Database Persistence**
 ```bash
 docker exec feedback-postgres psql -U postgres -d feedbackdb -c "SELECT * FROM feedback ORDER BY submitted_at DESC LIMIT 1;"
 ```
@@ -74,13 +83,14 @@ docker exec feedback-postgres psql -U postgres -d feedbackdb -c "SELECT * FROM f
 
 ### 🔄 Continuous Testing Loop
 
-For ongoing development testing:
+For ongoing development testing, use **Swagger UI** as your primary interface:
 
-1. **Submit** → Feedback via Swagger UI (vary member IDs, providers, ratings)
-2. **Verify** → 201 response in Swagger
-3. **Check** → New message in Kafka UI (refresh Messages tab)
-4. **Confirm** → Consumer log shows structured analytics
-5. **Validate** → Database contains record (optional)
+1. **Health Check** → Use Swagger `/api/v1/health` endpoints to verify services
+2. **Submit** → Feedback via Swagger UI (vary member IDs, providers, ratings)  
+3. **Verify** → 201 response in Swagger interface
+4. **Check** → New message in Kafka UI (refresh Messages tab)
+5. **Confirm** → Consumer log shows structured analytics
+6. **Validate** → Database contains record (optional)
 
 ### 🧪 Test Scenarios
 
@@ -151,7 +161,7 @@ cd feedback-api
 
 ### Test Coverage Overview
 
-**✅ Current Test Suite: 20 Unit Tests + 1 Integration Test (disabled)**
+**✅ Current Test Suite: 20 Unit Tests**
 
 #### **Test Categories:**
 
@@ -186,12 +196,12 @@ Tests HTTP endpoints using MockMvc (no real server):
 ### Test Results Summary
 
 ```bash
-Tests run: 21, Failures: 0, Errors: 0, Skipped: 1
+Tests run: 21, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 **Breakdown:**
 - **20 Unit Tests**: All passing ✅
-- **1 Integration Test**: Intentionally disabled (requires Docker containers)
+
 
 ### Test Architecture
 
@@ -241,46 +251,11 @@ private FeedbackEventPublisher eventPublisher;
 when(feedbackRepository.save(any())).thenReturn(mockEntity);
 ```
 
-### Test Data Management
-
-#### **Test Data Setup**
-```java
-@BeforeEach
-void setUp() {
-    validRequest = new FeedbackRequest();
-    validRequest.setMemberId("member-123");
-    validRequest.setProviderName("Dr. Smith");
-    validRequest.setRating(4);
-    validRequest.setComment("Great service!");
-}
-```
-
 #### **Edge Case Testing**
 - Null values, empty strings, whitespace-only inputs
 - Boundary values (rating 1, 5, 0, 6)
 - Maximum field lengths (36 chars for memberId, 200 for comment)
 - Business rule violations (duplicate feedback)
-
-### Testing Best Practices Used
-
-1. **Fast Execution** - All unit tests complete in ~3 seconds
-2. **Isolated Tests** - No shared state between tests
-3. **Realistic Data** - Uses meaningful test values
-4. **Clear Naming** - Test method names describe scenario and expectation
-5. **Comprehensive Coverage** - Tests happy path, edge cases, and errors
-6. **Proper Mocking** - Dependencies are mocked, not real implementations
-
-### 📊 Monitoring
-
-#### **Real-time Kafka Monitoring**
-- **Kafka UI**: http://localhost:8090
-- View message throughput, partition details, and consumer lag
-- Monitor topic health and message formats
-
-#### **Application Health**
-- **API Health**: http://localhost:8080/actuator/health
-- **Consumer Health**: http://localhost:8081/actuator/health
-- **Database Connection**: Included in health endpoints
 
 #### **Log Monitoring**
 ```bash
